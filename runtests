@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+roxy/manage.py test && pylint --rcfile=pylintrc --output-format=colorized roxy
+

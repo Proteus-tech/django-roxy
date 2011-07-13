@@ -1,0 +1,10 @@
+# These are required by the runtime
+httplib2
+django
+
+# These are required for testing
+django-nose
+mock
+unittest2
+coverage
+pylint
