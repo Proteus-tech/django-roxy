@@ -6,7 +6,7 @@ from django.conf.urls.defaults import patterns, include, url
 
 urlpatterns = patterns('',
     # Examples:
-    url(r'^', 'roxy.proxy.views.proxy', name='proxy'),
+    url(r'^', 'roxy.views.proxy', name='proxy'),
     # url(r'^roxy/', include('roxy.foo.urls')),
 
     # Uncomment the admin/doc line below to enable admin documentation:

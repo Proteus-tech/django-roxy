@@ -2,7 +2,7 @@ from django.conf import settings
 from django.test.client import Client
 from httplib2 import Http, Response
 from mock import Mock, patch
-from proxy.views import join_url, clone_cookies, update_response_header
+from roxy.views import join_url, clone_cookies, update_response_header
 from unittest2 import TestCase
 
 class TestViews(TestCase):

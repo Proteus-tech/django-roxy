@@ -1,3 +1,8 @@
 #!/usr/bin/env bash
-roxy/manage.py test && pylint --rcfile=pylintrc --output-format=colorized roxy
+TEST_PROJECT=${1:-'latest-django'}
+PROJECT_PATH='./test-projects/'$TEST_PROJECT'/'
+echo $PYTHONPATH
+export PYTHONPATH=${PYTHONPATH}:$PROJECT_PATH:.
+echo $PYTHONPATH
+python $PROJECT_PATH"manage.py" test && pylint --rcfile=pylintrc --output-format=colorized roxy
 
