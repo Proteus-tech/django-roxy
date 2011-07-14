@@ -22,10 +22,9 @@ setup(
         "License :: OSI Approved :: Boost Software License - Version 1.0 - August 17th, 2003",
     ],
     packages = ['roxy'],
-    scripts = [
-        'bin/pf-server-start', 'bin/pf-server-terminate', 'bin/pf-server-upgrade'],
     install_requires = ['httplib2'],
 
+    
 )
 
 
