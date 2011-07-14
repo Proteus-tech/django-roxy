@@ -11,7 +11,7 @@ setup(
     author = "Proteus Technologies Infrastructure team",
     author_email = "infrastructure@proteus-tech.com",
     description = ("Simple reverse proxy for Django"),
-    long_description = read('README.markdown'),
+#    long_description = read('README.markdown'),
     license = "Boost Software License - Version 1.0 - August 17th, 2003",
     keywords = "reverse proxy roxy django",
     classifiers = [
