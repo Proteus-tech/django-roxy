@@ -27,10 +27,10 @@ def proxy(origin_server, prefix):
 
         update_response_header(response, httplib2_response)
 
-#        if httplib2_response.status in [302]:
-        url = httplib2_response['location']
-        masked_location = masked_url(url, request.get_host(), prefix)
-        response['location'] = masked_location
+        if httplib2_response.status in [302]:
+            url = httplib2_response['location']
+            masked_location = masked_url(url, request.get_host(), prefix)
+            response['location'] = masked_location
         return response
     return get_page
 
