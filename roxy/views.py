@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.servers.basehttp import _hop_headers
 from httplib2 import Http, urlparse
 
-def proxy(origin_server, prefix):
+def proxy(origin_server):
     def get_page(request):
         """
         reverse proxy function
@@ -29,7 +29,7 @@ def proxy(origin_server, prefix):
 
         if httplib2_response.status in [302]:
             url = httplib2_response['location']
-            masked_location = masked_url(url, request.get_host(), prefix)
+            masked_location = masked_url(url, request.get_host())
             response['location'] = masked_location
         return response
     return get_page
@@ -43,7 +43,7 @@ def join_url(path, origin_server, is_secure=False):
         protocol = 'https'
     return  ('%s://%s%s') % (protocol, origin_server, path)
 
-def masked_url(url, host, prefix):
+def masked_url(url, host):
     """
     Mask given url with host
 
@@ -53,7 +53,7 @@ def masked_url(url, host, prefix):
     # _replace is an only method to edit properties of namedtuple :(
     # pylint: disable=E1103,W0212
     # no error
-    masked_splited_url = splited_url._replace(netloc = '%s/%s' % (host, prefix))
+    masked_splited_url = splited_url._replace(netloc = host)
     # pylint: enable=E1103,W0212 
     # error
     return masked_splited_url.geturl()
