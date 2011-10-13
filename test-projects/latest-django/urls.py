@@ -1,8 +1,13 @@
+from django.conf import settings
 from django.conf.urls.defaults import patterns, include, url
 
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
 # admin.autodiscover()
+from roxy.views import proxy
+
+origin_one = proxy(settings.ORIGIN_SERVER1)
+origin_two = proxy(settings.ORIGIN_SERVER2)
 
 urlpatterns = patterns('',
     # Examples:
