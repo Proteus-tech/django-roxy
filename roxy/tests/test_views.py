@@ -7,21 +7,25 @@ from unittest2 import TestCase
 
 class TestViews(TestCase):
 
+    def setUp(self):
+        super(TestViews, self).setUp()
+        self.foo_origin = settings.ORIGIN_SERVER1
+        self.bar_origin = settings.ORIGIN_SERVER2
     def test_join_url(self):
         """
         Ensure that the URL sent to requesting host is the origin server
         """
         path = '/services'
-        expected = "http://%s/services" % settings.ORIGIN_SERVER
-        self.assertEqual(expected, join_url(path))
+        expected = "http://%s/services" % self.foo_origin
+        self.assertEqual(expected, join_url(path, self.foo_origin))
 
     def test_join_url_with_params(self):
         """
         Ensure that request params are forwarded 
         """
         path = '/services/?status__code__exact=&venue__city__id__exact=&venue__id__exact=&q=212131&o='
-        expected = "http://%s/services/?status__code__exact=&venue__city__id__exact=&venue__id__exact=&q=212131&o=" % settings.ORIGIN_SERVER
-        self.assertEqual(expected, join_url(path))
+        expected = "http://%s/services/?status__code__exact=&venue__city__id__exact=&venue__id__exact=&q=212131&o=" % self.foo_origin
+        self.assertEqual(expected, join_url(path, self.foo_origin))
 
     def test_join_secure_url(self):
         """
@@ -29,8 +33,8 @@ class TestViews(TestCase):
         """
         path = '/services'
         is_secure = True
-        expected = "https://%s/services" % settings.ORIGIN_SERVER
-        self.assertEqual(expected, join_url(path, is_secure))
+        expected = "https://%s/services" % self.foo_origin
+        self.assertEqual(expected, join_url(path, self.foo_origin, is_secure))
 
     def test_clone_cookies__one_element(self):
         cookies = {'sessionid': '2af7395fba66995ad1376bf0e401b9a0'}
@@ -82,7 +86,7 @@ class TestPost(TestCase):
         """
         client = Client()
         cookies = {'sessionid': 'a4516258966ea20a6a11aefbf2f576c4'}
-        client.cookies.load(cookies) 
+        client.cookies.load(cookies)
         client.post('/', {'some':'data'})
         args = Http.request.call_args[0]
         kwargs = Http.request.call_args[1]
@@ -117,6 +121,11 @@ class TestRedirectionStatus(TestCase):
         response = client.get('/')
         self.assertEqual(302, response.status_code)
         self.assertEqual('http://testserver/login/?next=/', response['location'])
+
+        response = client.get('/origin_two/')
+        self.assertEqual(302, response.status_code)
+        self.assertEqual('http://testserver/login/?next=/', response['location'])
+
 
 class TestUpdateResponseHeaders(TestCase):
     def test_should_exclude_hop_by_hop_headers(self):
