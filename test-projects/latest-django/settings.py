@@ -135,7 +135,7 @@ NOSE_ARGS = [
     '--cover-erase',
     '--with-coverage',
     '--cover-package=roxy',
-    '--cover-tests',
+#    '--cover-tests',
 ]
 
 # A sample logging configuration. The only tangible logging
@@ -161,7 +161,7 @@ LOGGING = {
     }
 }
 
-#ORIGIN_SERVER = "www.google.co.th"
+ORIGIN_SERVER = "www.google.co.th"
 ORIGIN_SERVER1 = "proteus-tech.com"
 #ORIGIN_SERVER = "github.com"
 ORIGIN_SERVER2 = "localhost:8001"

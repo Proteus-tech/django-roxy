@@ -11,6 +11,7 @@ class TestViews(TestCase):
         super(TestViews, self).setUp()
         self.foo_origin = settings.ORIGIN_SERVER1
         self.bar_origin = settings.ORIGIN_SERVER2
+
     def test_join_url(self):
         """
         Ensure that the URL sent to requesting host is the origin server
@@ -51,7 +52,6 @@ class TestViews(TestCase):
         self.assertEqual(expected, clone_cookies(cookies))
 
 
-
 class TestOKStatus(TestCase):
     def setUp(self):
         mock_http_request(self)
@@ -67,6 +67,36 @@ class TestOKStatus(TestCase):
         client = Client()
         response = client.get('/some/freaking/url')
         self.assertEqual(200, response.status_code)
+
+    @patch('roxy.views.join_url')
+    def test_proxy(self, mock_join_url):
+        """
+        Test that proxy can be called with any server as given in urls.py
+        #  in our urls.py
+
+        origin_one = proxy(settings.ORIGIN_SERVER1)
+        origin_two = proxy(settings.ORIGIN_SERVER2)
+        url(r'^origin_server_1/', origin_one, name='proxy1'),
+        url(r'^origin_server_2/', origin_two , name='proxy2'),
+        url(r'^', proxy() , name='proxy3'),
+
+        """
+
+
+        client = Client()
+        response = client.get('/origin_server_1/')
+        self.assertEqual(200, response.status_code)
+        mock_join_url.assert_called_with('/origin_server_1/', settings.ORIGIN_SERVER1, False)
+
+
+        response = client.get('/origin_server_2/')
+        self.assertEqual(200, response.status_code)
+        mock_join_url.assert_called_with('/origin_server_2/', settings.ORIGIN_SERVER2, False)
+
+        response = client.get('/')
+        self.assertEqual(200, response.status_code)
+        mock_join_url.assert_called_with('/', settings.ORIGIN_SERVER, False)
+
 
 
 class TestPost(TestCase):
@@ -122,9 +152,10 @@ class TestRedirectionStatus(TestCase):
         self.assertEqual(302, response.status_code)
         self.assertEqual('http://testserver/login/?next=/', response['location'])
 
-        response = client.get('/origin_two/')
+        response = client.get('/')
         self.assertEqual(302, response.status_code)
         self.assertEqual('http://testserver/login/?next=/', response['location'])
+
 
 
 class TestUpdateResponseHeaders(TestCase):

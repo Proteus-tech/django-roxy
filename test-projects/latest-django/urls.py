@@ -11,8 +11,9 @@ origin_two = proxy(settings.ORIGIN_SERVER2)
 
 urlpatterns = patterns('',
     # Examples:
-    url(r'^origin_one/', origin_two, name='proxy1'),
-    url(r'^', origin_one, name='proxy2'),
+    url(r'^origin_server_1/', origin_one, name='proxy1'),
+    url(r'^origin_server_2/', origin_two , name='proxy2'),
+    url(r'^', proxy() , name='proxy3'),
     # url(r'^roxy/', include('roxy.foo.urls')),
 
     # Uncomment the admin/doc line below to enable admin documentation:

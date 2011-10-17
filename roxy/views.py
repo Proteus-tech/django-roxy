@@ -1,12 +1,13 @@
 """
 views that handle reverse proxy
 """
+from django.conf import settings
 
 from django.http import HttpResponse
 from django.core.servers.basehttp import _hop_headers
 from httplib2 import Http, urlparse
 
-def proxy(origin_server, prefix=None):
+def proxy(origin_server=settings.ORIGIN_SERVER, prefix=None):
     def get_page(request):
         """
         reverse proxy function
