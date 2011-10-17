@@ -162,9 +162,9 @@ LOGGING = {
 }
 
 #ORIGIN_SERVER = "www.google.co.th"
-#ORIGIN_SERVER = "proteus-tech.com"
+ORIGIN_SERVER1 = "proteus-tech.com"
 #ORIGIN_SERVER = "github.com"
-ORIGIN_SERVER = "localhost:8001"
+ORIGIN_SERVER2 = "localhost:8001"
 #ORIGIN_SERVER = "squire.proteus-tech.com:8001"
 #ORIGIN_SERVER = "www.sanook.com"
 #ORIGIN_SERVER = "www.facebook.com"
