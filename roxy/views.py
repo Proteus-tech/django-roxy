@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.core.servers.basehttp import _hop_headers
 from httplib2 import Http, urlparse
 
-def proxy(origin_server=settings.ORIGIN_SERVER, prefix=None):
+def proxy(origin_server, prefix=None):
     def get_page(request):
         """
         reverse proxy function
@@ -22,7 +22,7 @@ def proxy(origin_server=settings.ORIGIN_SERVER, prefix=None):
             headers = {'Cookie': cookie_value}
 
         headers['Content-Type'] = request.META['CONTENT_TYPE']
-        httplib2_response, content = http.request(target_url, request.method, body=request.raw_post_data, headers=headers)
+        httplib2_response, content = http.request(target_url, request.method, body=request.read(), headers=headers)
         mime_type = httplib2_response['content-type']
         response = HttpResponse(content, status=httplib2_response.status, mimetype=mime_type)
 

@@ -78,7 +78,7 @@ class TestOKStatus(TestCase):
         origin_two = proxy(settings.ORIGIN_SERVER2)
         url(r'^origin_server_1/', origin_one, name='proxy1'),
         url(r'^origin_server_2/', origin_two , name='proxy2'),
-        url(r'^', proxy() , name='proxy3'),
+        url(r'^', origin_two , name='proxy3'),
 
         """
 
@@ -95,7 +95,7 @@ class TestOKStatus(TestCase):
 
         response = client.get('/')
         self.assertEqual(200, response.status_code)
-        mock_join_url.assert_called_with('/', settings.ORIGIN_SERVER, False)
+        mock_join_url.assert_called_with('/', settings.ORIGIN_SERVER2, False)
 
 
 
