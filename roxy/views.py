@@ -23,7 +23,8 @@ def proxy(origin_server, prefix=None):
             cookie_value = clone_cookies(request.COOKIES)
             headers = {'Cookie': cookie_value}
 
-        headers['Content-Type'] = request.META['CONTENT_TYPE']
+        if request.method == 'POST' or request.method == 'PUT':
+            headers['Content-Type'] = request.META['CONTENT_TYPE']
         httplib2_response, content = http.request(
             target_url, request.method, body=request.raw_post_data, headers=headers)
         mime_type = httplib2_response['content-type']
