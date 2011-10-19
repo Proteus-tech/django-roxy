@@ -7,9 +7,12 @@ from httplib2 import Http, urlparse
 
 
 def proxy(origin_server, prefix=None):
+    """
+    Builder for the actual Django view. Use this in your urls.py.
+    """
     def get_page(request):
         """
-        reverse proxy function
+        reverse proxy Django view
         """
         path = request.get_full_path().replace(prefix, '', 1) if prefix else request.get_full_path()
         target_url = join_url(path, origin_server, request.is_secure())
