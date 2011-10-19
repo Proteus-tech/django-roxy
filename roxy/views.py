@@ -1,11 +1,10 @@
 """
 views that handle reverse proxy
 """
-from django.conf import settings
-
 from django.http import HttpResponse
 from django.core.servers.basehttp import _hop_headers
 from httplib2 import Http, urlparse
+
 
 def proxy(origin_server, prefix=None):
     def get_page(request):
@@ -22,7 +21,8 @@ def proxy(origin_server, prefix=None):
             headers = {'Cookie': cookie_value}
 
         headers['Content-Type'] = request.META['CONTENT_TYPE']
-        httplib2_response, content = http.request(target_url, request.method, body=request.raw_post_data, headers=headers)
+        httplib2_response, content = http.request(
+            target_url, request.method, body=request.raw_post_data, headers=headers)
         mime_type = httplib2_response['content-type']
         response = HttpResponse(content, status=httplib2_response.status, mimetype=mime_type)
 
@@ -55,10 +55,10 @@ def masked_url(url, host, prefix):
     # pylint: disable=E1103,W0212
     # no error
     masked_splited_url = splited_url._replace(netloc = '%s/%s' % (host, prefix) if prefix else host)
-    # pylint: enable=E1103,W0212 
+    # pylint: enable=E1103,W0212
     # error
     return masked_splited_url.geturl()
- 
+
 def clone_cookies(request_cookies):
     """
     return value to be set in Cookie header to pass on
