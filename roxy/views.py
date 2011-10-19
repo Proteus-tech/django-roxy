@@ -5,6 +5,8 @@ from django.http import HttpResponse
 from django.core.servers.basehttp import _hop_headers
 from httplib2 import Http, urlparse
 
+_http = Http()
+_http.follow_redirects = False
 
 def proxy(origin_server, prefix=None):
     """
@@ -16,8 +18,6 @@ def proxy(origin_server, prefix=None):
         """
         path = request.get_full_path().replace(prefix, '', 1) if prefix else request.get_full_path()
         target_url = join_url(path, origin_server, request.is_secure())
-        http = Http()
-        http.follow_redirects = False
         headers = {}
         if request.COOKIES:
             cookie_value = clone_cookies(request.COOKIES)
@@ -25,7 +25,9 @@ def proxy(origin_server, prefix=None):
 
         if request.method == 'POST' or request.method == 'PUT':
             headers['Content-Type'] = request.META['CONTENT_TYPE']
-        httplib2_response, content = http.request(
+        if request.user.is_authenticated():
+            headers['X-FOST-User'] = request.user.username
+        httplib2_response, content = _http.request(
             target_url, request.method, body=request.raw_post_data, headers=headers)
         mime_type = httplib2_response['content-type']
         response = HttpResponse(content, status=httplib2_response.status, mimetype=mime_type)
