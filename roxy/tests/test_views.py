@@ -1,9 +1,10 @@
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.test.client import Client
 from httplib2 import Http, Response
 from mock import Mock, patch
 from roxy.views import join_url, clone_cookies, update_response_header
-from unittest2 import TestCase
+from django.test import TestCase
 
 class TestViews(TestCase):
 
@@ -127,13 +128,26 @@ class TestPost(TestCase):
         Make sure that no headers are forwarded,
         especially 'set-cookies', if not forwarded login functionality won't work!
         """
-        client = Client()
-        response = client.post('/', {'some':'data'})
+        User.objects.create_superuser('euam', 'euam@test.com', 'euampass')
+        self.client.login(username='euam', password='euampass')
+        response = self.client.post('/', {'some':'data'})
         msg = "'Set-Cookie' should be forwarded or login may fail"
 #        self.assertEqual(response.get('Set-Cookie',None),
 #                         'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/',
 #                         msg)
         self.assertIsNone(response.get('Set-Cookie',None))
+
+    def test_set_cookie_header_is_forwarded(self):
+        """
+        Make sure that no headers are forwarded,
+        especially 'set-cookies', if not forwarded login functionality won't work!
+        """
+        response = self.client.post('/', {'some':'data'})
+        msg = "'Set-Cookie' should be forwarded or login may fail"
+        self.assertEqual(response.get('Set-Cookie',None),
+                         'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/',
+                         msg)
+#        self.assertIsNone(response.get('Set-Cookie',None))
 
 
 class TestRedirectionStatus(TestCase):
