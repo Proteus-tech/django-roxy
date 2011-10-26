@@ -32,7 +32,7 @@ def proxy(origin_server, prefix=None):
         mime_type = httplib2_response['content-type']
         response = HttpResponse(content, status=httplib2_response.status, mimetype=mime_type)
 
-        if request.user.is_authenticated():
+        if not request.user.is_authenticated():
             update_response_header(response, httplib2_response)
 
         if httplib2_response.status in [302]:
