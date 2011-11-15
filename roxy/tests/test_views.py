@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.test.client import Client
 from httplib2 import Http, Response
 from mock import Mock, patch
 from roxy.views import join_url, clone_cookies, update_response_header
@@ -65,8 +64,7 @@ class TestOKStatus(TestCase):
         """
         Test that proxy supports anykind of URL
         """
-        client = Client()
-        response = client.get('/some/freaking/url')
+        response = self.client.get('/some/freaking/url')
         self.assertEqual(200, response.status_code)
 
     @patch('roxy.views.join_url')
@@ -84,17 +82,16 @@ class TestOKStatus(TestCase):
         """
 
 
-        client = Client()
-        response = client.get('/origin_server_1/')
+        response = self.client.get('/origin_server_1/')
         self.assertEqual(200, response.status_code)
         mock_join_url.assert_called_with('/origin_server_1/', settings.ORIGIN_SERVER1, False)
 
 
-        response = client.get('/origin_server_2/')
+        response = self.client.get('/origin_server_2/')
         self.assertEqual(200, response.status_code)
         mock_join_url.assert_called_with('/origin_server_2/', settings.ORIGIN_SERVER2, False)
 
-        response = client.get('/')
+        response = self.client.get('/')
         self.assertEqual(200, response.status_code)
         mock_join_url.assert_called_with('/', settings.ORIGIN_SERVER2, False)
 
@@ -115,10 +112,9 @@ class TestPost(TestCase):
         """
         Test that if request comes with cookies, the cookies is forwared to origin server
         """
-        client = Client()
         cookies = {'sessionid': 'a4516258966ea20a6a11aefbf2f576c4'}
-        client.cookies.load(cookies)
-        client.post('/', {'some':'data'})
+        self.client.cookies.load(cookies)
+        self.client.post('/', {'some':'data'})
         args = Http.request.call_args[0]
         kwargs = Http.request.call_args[1]
         self.assertIn('Cookie', kwargs['headers'].keys())
@@ -150,6 +146,26 @@ class TestPost(TestCase):
 #        self.assertIsNone(response.get('Set-Cookie',None))
 
 
+class TestGet(TestCase):
+    def setUp(self):
+        self.patch_http_request = patch('httplib2.Http.request')
+        self.mock_http_request = self.patch_http_request.start()
+
+    def tearDown(self):
+        self.patch_http_request.stop()
+
+    def test_content_type_and_content_disposition(self):
+        info = {}
+        info['status'] = 200
+        mock_response = Response(info)
+        mock_response['Content-Type'] = 'text/csv'
+        mock_response['Content-Disposition'] = 'attachment; filename=abc_business_units.csv'
+        self.mock_http_request.return_value = (mock_response,'')
+        response = self.client.get('/url_that_will_return_csv_file/')
+        self.assertEqual(response['Content-Type'],mock_response['Content-Type'])
+        self.assertEqual(response['Content-Disposition'],mock_response['Content-Disposition'])
+
+
 class TestRedirectionStatus(TestCase):
     def setUp(self):
         mock_http_request(self, 302, location='http://someserver.com/login/?next=/')
@@ -162,12 +178,11 @@ class TestRedirectionStatus(TestCase):
         """
         Test that proxy supports anykind of URL
         """
-        client = Client()
-        response = client.get('/')
+        response = self.client.get('/')
         self.assertEqual(302, response.status_code)
         self.assertEqual('http://testserver/login/?next=/', response['location'])
 
-        response = client.get('/')
+        response = self.client.get('/')
         self.assertEqual(302, response.status_code)
         self.assertEqual('http://testserver/login/?next=/', response['location'])
 
