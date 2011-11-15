@@ -3,6 +3,7 @@ views that handle reverse proxy
 """
 from django.http import HttpResponse
 from django.core.servers.basehttp import _hop_headers
+from django.conf.global_settings import DEFAULT_CONTENT_TYPE
 from httplib2 import Http, urlparse
 
 _http = Http()
@@ -29,11 +30,10 @@ def proxy(origin_server, prefix=None):
             headers['X-FOST-User'] = request.user.username
         httplib2_response, content = _http.request(
             target_url, request.method, body=request.raw_post_data, headers=headers)
-        mime_type = httplib2_response['content-type']
-        response = HttpResponse(content, status=httplib2_response.status, mimetype=mime_type)
+        content_type = httplib2_response.get('content-type',DEFAULT_CONTENT_TYPE)
+        response = HttpResponse(content, status=httplib2_response.status, content_type=content_type)
 
-        if not request.user.is_authenticated():
-            update_response_header(response, httplib2_response)
+        update_response_header(response, httplib2_response)
 
         if httplib2_response.status in [302]:
             url = httplib2_response['location']
