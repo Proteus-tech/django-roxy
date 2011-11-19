@@ -9,6 +9,21 @@ from httplib2 import Http, urlparse
 _http = Http()
 _http.follow_redirects = False
 
+def adjust_messages_cookie(cookie_value):
+    messages_key = 'messages='
+    # find messages
+    messages_pos = cookie_value.find(messages_key)
+    if messages_pos != -1:
+        # find the end of messages
+        comma_pos = cookie_value.find(';',messages_pos)
+        # content before message
+        content_before = cookie_value[:messages_pos+len(messages_key)]
+        content_after = cookie_value[comma_pos:]
+        messages_content = cookie_value[messages_pos+len(messages_key):comma_pos]
+        adjusted_cookie_value = '%s"%s"%s' % (content_before,messages_content.replace('"','\\"'),content_after)
+        return adjusted_cookie_value
+    
+
 def proxy(origin_server, prefix=None):
     """
     Builder for the actual Django view. Use this in your urls.py.
@@ -21,7 +36,7 @@ def proxy(origin_server, prefix=None):
         target_url = join_url(path, origin_server, request.is_secure())
         headers = {}
         if request.COOKIES:
-            cookie_value = clone_cookies(request.COOKIES)
+            cookie_value = adjust_messages_cookie(clone_cookies(request.COOKIES))
             headers = {'Cookie': cookie_value}
 
         if request.method == 'POST' or request.method == 'PUT':
