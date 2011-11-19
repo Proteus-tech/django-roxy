@@ -22,6 +22,8 @@ def adjust_messages_cookie(cookie_value):
         messages_content = cookie_value[messages_pos+len(messages_key):comma_pos]
         adjusted_cookie_value = '%s"%s"%s' % (content_before,messages_content.replace('"','\\"'),content_after)
         return adjusted_cookie_value
+    else:
+        return cookie_value
     
 
 def proxy(origin_server, prefix=None):
