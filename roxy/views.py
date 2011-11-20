@@ -3,6 +3,7 @@ views that handle reverse proxy
 """
 from django.http import HttpResponse
 from django.core.servers.basehttp import _hop_headers
+from django.contrib import messages
 from django.conf.global_settings import DEFAULT_CONTENT_TYPE
 from httplib2 import Http, urlparse
 
@@ -51,6 +52,13 @@ def proxy(origin_server, prefix=None):
         response = HttpResponse(content, status=httplib2_response.status, content_type=content_type)
 
         update_response_header(response, httplib2_response)
+
+        # update message cookie
+        if request.method == 'GET' and headers.get('Cookie') and headers['Cookie'].find('messages=') \
+            and httplib2_response.get('set-cookie','').find('messages=;') != -1:
+
+            response.delete_cookie('messages')
+
 
         if httplib2_response.status in [302]:
             url = httplib2_response['location']
