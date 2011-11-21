@@ -99,8 +99,12 @@ def adjust_messages_cookie(cookie_value):
         comma_pos = cookie_value.find(';',messages_pos)
         # content before message
         content_before = cookie_value[:messages_pos+len(messages_key)]
-        content_after = cookie_value[comma_pos:]
-        messages_content = cookie_value[messages_pos+len(messages_key):comma_pos]
+        if comma_pos != -1:
+            content_after = cookie_value[comma_pos:]
+            messages_content = cookie_value[messages_pos+len(messages_key):comma_pos]
+        else:
+            content_after = ''
+            messages_content = cookie_value[messages_pos+len(messages_key):]
         adjusted_cookie_value = '%s"%s"%s' % (content_before,messages_content.replace('"','\\"'),content_after)
         return adjusted_cookie_value
     else:
