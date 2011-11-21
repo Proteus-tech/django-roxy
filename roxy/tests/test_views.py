@@ -228,6 +228,38 @@ class TestMessagesCookie(TestCase):
         response = self.client.get('/admin/company/company/',**{'HTTP_COOKIE':request_cookies})
         self.assertIn('messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\",20,\\"2 companies have been merged\\"]]"',self.mock_http_request.call_args[1]['headers']['Cookie'])
 
+    def test_getting_page_with_messages_cookie_as_last_cookie(self):
+        def always_return_messages_last_clone_cookies(request_cookies):
+            cookies = []
+            print request_cookies
+            for key, value in request_cookies.items():
+                if key != 'messages':
+                    cookies.append('%s=%s' % (key, value))
+            cookie_value = ';'.join(cookies)
+            if request_cookies.get('messages'):
+                cookie_value = '%s;messages=%s' % (cookie_value,request_cookies['messages'])
+            return cookie_value
+
+
+        info = {}
+        info['status'] = 200
+        mock_response = Response(info)
+        mock_response['set-cookie'] = 'csrftoken=82890e1660bc8ed4c2a65d8bbeaa8675; expires=Sun, 18-Nov-2012 17:22:50 GMT; Max-Age=31449600; Path=/, sessionid=f6d552348682acfea47aa2c203319e7a; expires=Sun, 04-Dec-2011 17:22:50 GMT; Max-Age=1209600; Path=/, messages=; expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/'
+        self.mock_http_request.return_value = (mock_response,'')
+
+        request_cookies = '__utma=96992031.73512554.1298128014.1298718782.1298921649.6; djdt=hide; sessionid=b5a63ebae5793e6c68d1d48980c6baf0; csrftoken=803112d8898d80a5612912957ec61db8; messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\"\\05420\\054\\"2 companies have been merged\\"]]"'
+
+        # mock clone_cookies to always return messages last
+        patch_clone_cookies = patch('roxy.views.clone_cookies')
+        mock_clone_cookies = patch_clone_cookies.start()
+        mock_clone_cookies.side_effect = always_return_messages_last_clone_cookies
+
+        response = self.client.get('/admin/company/company/',**{'HTTP_COOKIE':request_cookies})
+
+        mock_clone_cookies.stop()
+        
+        self.assertIn('messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\",20,\\"2 companies have been merged\\"]]"',self.mock_http_request.call_args[1]['headers']['Cookie'])
+
 
 def mock_http_request(test, code=200, content_type='text/html', **kwargs):
     info = {}
