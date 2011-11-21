@@ -111,10 +111,10 @@ def update_messages_cookie(request,headers,httplib2_response,response):
     If the request has messages cookie, and now the response from the backend says that it should be deleted,
     we should delete the cookie
     """
-    if request.method == 'GET' and headers.get('Cookie') and headers['Cookie'].find('messages=') \
-        and httplib2_response.get('set-cookie','').find('messages=;') != -1:
-
-        response.delete_cookie('messages')
+    if request.method == 'GET' and headers.get('Cookie') and headers['Cookie'].find('messages='):
+        response_set_cookie = httplib2_response.get('set-cookie','')
+        if (response_set_cookie.find('messages=') == -1) or (response_set_cookie.find('messages=;') != -1):
+            response.delete_cookie('messages')
 
 
 
