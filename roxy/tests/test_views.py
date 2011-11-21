@@ -128,10 +128,9 @@ class TestPost(TestCase):
         self.client.login(username='euam', password='euampass')
         response = self.client.post('/', {'some':'data'})
         msg = "'Set-Cookie' should be forwarded or login may fail"
-#        self.assertEqual(response.get('Set-Cookie',None),
-#                         'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/',
-#                         msg)
-        self.assertIsNone(response.get('Set-Cookie',None))
+        self.assertEqual(response.get('Set-Cookie',None),
+                         'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/',
+                         msg)
 
     def test_set_cookie_header_is_forwarded(self):
         """
