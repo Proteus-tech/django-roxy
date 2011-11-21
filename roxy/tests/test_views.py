@@ -128,10 +128,9 @@ class TestPost(TestCase):
         self.client.login(username='euam', password='euampass')
         response = self.client.post('/', {'some':'data'})
         msg = "'Set-Cookie' should be forwarded or login may fail"
-#        self.assertEqual(response.get('Set-Cookie',None),
-#                         'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/',
-#                         msg)
-        self.assertIsNone(response.get('Set-Cookie',None))
+        self.assertEqual(response.get('Set-Cookie',None),
+                         'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/',
+                         msg)
 
     def test_set_cookie_header_is_forwarded(self):
         """
@@ -209,26 +208,6 @@ class TestUpdateResponseHeaders(TestCase):
         update_response_header(stub_response, headers)
         self.assertIn('set-cookie', stub_response)
         self.assertIn('content-type', stub_response)
-
-class TestMessagesCookie(TestCase):
-    def setUp(self):
-        self.patch_http_request = patch('httplib2.Http.request')
-        self.mock_http_request = self.patch_http_request.start()
-
-    def tearDown(self):
-        self.patch_http_request.stop()
-
-    def test_getting_page_with_messages_cookie(self):
-        info = {}
-        info['status'] = 200
-        mock_response = Response(info)
-        mock_response['set-cookie'] = 'csrftoken=82890e1660bc8ed4c2a65d8bbeaa8675; expires=Sun, 18-Nov-2012 17:22:50 GMT; Max-Age=31449600; Path=/, sessionid=f6d552348682acfea47aa2c203319e7a; expires=Sun, 04-Dec-2011 17:22:50 GMT; Max-Age=1209600; Path=/, messages=; expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/'
-        self.mock_http_request.return_value = (mock_response,'')
-
-        request_cookies = '__utma=96992031.73512554.1298128014.1298718782.1298921649.6; djdt=hide; sessionid=b5a63ebae5793e6c68d1d48980c6baf0; csrftoken=803112d8898d80a5612912957ec61db8; messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\"\\05420\\054\\"2 companies have been merged\\"]]"'
-        response = self.client.get('/admin/company/company/',**{'HTTP_COOKIE':request_cookies})
-        self.assertIn('messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\",20,\\"2 companies have been merged\\"]]"',self.mock_http_request.call_args[1]['headers']['Cookie'])
-
 
 def mock_http_request(test, code=200, content_type='text/html', **kwargs):
     info = {}
