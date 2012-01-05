@@ -30,12 +30,11 @@ def proxy(origin_server, prefix=None):
             headers['X-FOST-User'] = request.user.username
         httplib2_response, content = _http.request(
             target_url, request.method, body=request.raw_post_data, headers=headers)
-        content_type = httplib2_response.get('content-type',DEFAULT_CONTENT_TYPE)
+        content_type = httplib2_response.get('content-type', DEFAULT_CONTENT_TYPE)
         response = HttpResponse(content, status=httplib2_response.status, content_type=content_type)
 
         update_response_header(response, httplib2_response)
-
-        update_messages_cookie(request,headers,httplib2_response,response)
+        update_messages_cookie(request, headers, httplib2_response, response)
 
         if httplib2_response.status in [302]:
             url = httplib2_response['location']
@@ -96,7 +95,7 @@ def adjust_messages_cookie(cookie_value):
     messages_pos = cookie_value.find(messages_key)
     if messages_pos != -1:
         # find the end of messages
-        comma_pos = cookie_value.find(';',messages_pos)
+        comma_pos = cookie_value.find(';', messages_pos)
         # content before message
         content_before = cookie_value[:messages_pos+len(messages_key)]
         if comma_pos != -1:
@@ -105,12 +104,12 @@ def adjust_messages_cookie(cookie_value):
         else:
             content_after = ''
             messages_content = cookie_value[messages_pos+len(messages_key):]
-        adjusted_cookie_value = '%s"%s"%s' % (content_before,messages_content.replace('"','\\"'),content_after)
+        adjusted_cookie_value = '%s"%s"%s' % (content_before, messages_content.replace('"', '\\"'), content_after)
         return adjusted_cookie_value
     else:
         return cookie_value
 
-def update_messages_cookie(request,headers,httplib2_response,response):
+def update_messages_cookie(request, headers, httplib2_response, response):
     """
     If the request has messages cookie, and now the response from the backend says that it should be deleted,
     we should delete the cookie
@@ -119,6 +118,4 @@ def update_messages_cookie(request,headers,httplib2_response,response):
         response_set_cookie = httplib2_response.get('set-cookie','')
         if (response_set_cookie.find('messages=') == -1) or (response_set_cookie.find('messages=;') != -1):
             response.delete_cookie('messages')
-
-
 
