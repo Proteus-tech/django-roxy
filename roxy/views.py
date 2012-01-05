@@ -92,6 +92,11 @@ def update_response_header(response, headers):
 
 
 def adjust_messages_cookie(cookie_value):
+    """
+    Somewhere we seem to be getting raw cookie values which get re-escaped when we send
+    them on rather than seeing the un-escaped version. This rips the escaping out so it can be
+    re-applied by httplib2.
+    """
     messages_key = 'messages='
     # find messages
     messages_pos = cookie_value.find(messages_key)
