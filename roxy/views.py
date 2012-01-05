@@ -29,7 +29,9 @@ def proxy(origin_server, prefix=None):
         if request.user.is_authenticated():
             headers['X-FOST-User'] = request.user.username
         httplib2_response, content = _http.request(
-            target_url, request.method, body=request.raw_post_data, headers=headers)
+            target_url, request.method,
+            body=bytearray(unicode(request.raw_post_data.decode('utf-8')), 'utf-8'),
+            headers=headers)
         content_type = httplib2_response.get('content-type', DEFAULT_CONTENT_TYPE)
         response = HttpResponse(content, status=httplib2_response.status, content_type=content_type)
 
