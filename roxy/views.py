@@ -2,12 +2,19 @@
 views that handle reverse proxy
 """
 from django.http import HttpResponse
-from django.core.servers.basehttp import _hop_headers
 from django.conf.global_settings import DEFAULT_CONTENT_TYPE
 from httplib2 import Http, urlparse
 
 _http = Http()
 _http.follow_redirects = False
+
+# django 1.4 rename _hop_headers to _hoppish. so define here, these  Hop-by-hop Headers are defined in rfc2616,
+# not to be forwarded by proxies
+_hop_headers = {
+    'connection':1, 'keep-alive':1, 'proxy-authenticate':1,
+    'proxy-authorization':1, 'te':1, 'trailers':1, 'transfer-encoding':1,
+    'upgrade':1
+}
 
 def proxy(origin_server, prefix=None):
     """
@@ -83,7 +90,8 @@ def update_response_header(response, headers):
     """
     update response header with given headers
 
-    ignore hop headers to avoid django hop-by-hop assertion error
+    ignore hop headers to avoid django hop-by-hop assertion error as
+    hop-by-hop should not be forwarded by proxy
     """
     ignored_keys = ['status', 'content-location'] + _hop_headers.keys()
     for key, value in headers.items():
