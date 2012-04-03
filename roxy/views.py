@@ -20,7 +20,7 @@ def proxy(origin_server, prefix=None):
     """
     Builder for the actual Django view. Use this in your urls.py.
     """
-    def get_page(request):
+    def get_page(request, *args, **kwargs):
         """
         reverse proxy Django view
         """
@@ -31,13 +31,23 @@ def proxy(origin_server, prefix=None):
             cookie_value = adjust_messages_cookie(clone_cookies(request.COOKIES))
             headers = {'Cookie': cookie_value}
 
-        if request.method == 'POST' or request.method == 'PUT':
+#        if request.method == 'POST' or request.method == 'PUT':
+        if request.META.has_key('CONTENT_TYPE'):
             headers['Content-Type'] = request.META['CONTENT_TYPE']
+        if request.META.has_key('CONTENT_LENGTH'):
+            headers['Content-Length'] = request.META['CONTENT_LENGTH']
         if request.user.is_authenticated():
             headers['X-FOST-User'] = request.user.username
+
+        for header, value in request.META.items():
+            if header.startswith('HTTP_'):
+                name = header.replace('HTTP_', '').replace('_', '-').title()
+                headers[name] = value
+
         httplib2_response, content = _http.request(
             target_url, request.method,
-            body=bytearray(unicode(request.raw_post_data.decode('utf-8')), 'utf-8'),
+#            body=bytearray(unicode(request.raw_post_data.decode('utf-8')), 'utf-8'),
+            body=bytearray(request.raw_post_data),
             headers=headers)
         content_type = httplib2_response.get('content-type', DEFAULT_CONTENT_TYPE)
         response = HttpResponse(content, status=httplib2_response.status, content_type=content_type)
