@@ -5,9 +5,6 @@ from django.http import HttpResponse
 from django.conf.global_settings import DEFAULT_CONTENT_TYPE
 from httplib2 import Http, urlparse
 
-_http = Http()
-_http.follow_redirects = False
-
 # django 1.4 rename _hop_headers to _hoppish. so define here, these  Hop-by-hop Headers are defined in rfc2616,
 # not to be forwarded by proxies
 _hop_headers = {
@@ -26,36 +23,40 @@ def proxy(origin_server, prefix=None):
         """
         path = request.get_full_path().replace(prefix, '', 1) if prefix else request.get_full_path()
         target_url = join_url(path, origin_server, request.is_secure())
-        headers = {}
-        if request.COOKIES:
-            cookie_value = adjust_messages_cookie(clone_cookies(request.COOKIES))
-            headers = {'Cookie': cookie_value}
 
-#        if request.method == 'POST' or request.method == 'PUT':
+        # Construct headers
+        headers = {}
         if request.META.has_key('CONTENT_TYPE'):
             headers['Content-Type'] = request.META['CONTENT_TYPE']
         if request.META.has_key('CONTENT_LENGTH'):
             headers['Content-Length'] = request.META['CONTENT_LENGTH']
-        if request.user.is_authenticated():
-            headers['X-FOST-User'] = request.user.username
-
         for header, value in request.META.items():
             if header.startswith('HTTP_'):
                 name = header.replace('HTTP_', '').replace('_', '-').title()
                 headers[name] = value
 
-        httplib2_response, content = _http.request(
+        ########################################################################
+        # TODO: Move this to somewhere else, e.g. middleware
+        if request.user.is_authenticated():
+            headers['X-FOST-User'] = request.user.username
+        ########################################################################
+
+        # Send request
+        http = Http()
+        http.follow_redirects = False
+        httplib2_response, content = http.request(
             target_url, request.method,
-#            body=bytearray(unicode(request.raw_post_data.decode('utf-8')), 'utf-8'),
             body=bytearray(request.raw_post_data),
             headers=headers)
+
+        # Construct Django HttpResponse
         content_type = httplib2_response.get('content-type', DEFAULT_CONTENT_TYPE)
         response = HttpResponse(content, status=httplib2_response.status, content_type=content_type)
 
         update_response_header(response, httplib2_response)
         update_messages_cookie(request, headers, httplib2_response, response)
 
-        if httplib2_response.status in [302]:
+        if httplib2_response.status in [301, 302]:
             url = httplib2_response['location']
             masked_location = masked_url(url, request.get_host(), prefix)
             response['location'] = masked_location
@@ -86,16 +87,6 @@ def masked_url(url, host, prefix):
     # error
     return masked_splited_url.geturl()
 
-def clone_cookies(request_cookies):
-    """
-    return value to be set in Cookie header to pass on
-    """
-    cookies = []
-    for key, value in request_cookies.items():
-        cookies.append('%s=%s' % (key, value))
-    cookie_value = ';'.join(cookies)
-    return cookie_value
-
 def update_response_header(response, headers):
     """
     update response header with given headers
@@ -107,32 +98,6 @@ def update_response_header(response, headers):
     for key, value in headers.items():
         if key not in ignored_keys:
             response[key] = value
-
-
-def adjust_messages_cookie(cookie_value):
-    """
-    Somewhere we seem to be getting raw cookie values which get re-escaped when we send
-    them on rather than seeing the un-escaped version. This rips the escaping out so it can be
-    re-applied by httplib2.
-    """
-    messages_key = 'messages='
-    # find messages
-    messages_pos = cookie_value.find(messages_key)
-    if messages_pos != -1:
-        # find the end of messages
-        comma_pos = cookie_value.find(';', messages_pos)
-        # content before message
-        content_before = cookie_value[:messages_pos+len(messages_key)]
-        if comma_pos != -1:
-            content_after = cookie_value[comma_pos:]
-            messages_content = cookie_value[messages_pos+len(messages_key):comma_pos]
-        else:
-            content_after = ''
-            messages_content = cookie_value[messages_pos+len(messages_key):]
-        adjusted_cookie_value = '%s"%s"%s' % (content_before, messages_content.replace('"', '\\"'), content_after)
-        return adjusted_cookie_value
-    else:
-        return cookie_value
 
 def update_messages_cookie(request, headers, httplib2_response, response):
     """
