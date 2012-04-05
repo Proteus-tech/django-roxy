@@ -17,17 +17,19 @@ class UserForwarding(TestCase):
         super(UserForwarding, self).setUp()
 
     def test_no_user(self):
-        def no_user_header(url, method, body, headers):
+        def no_user_header(url, *args, **kwargs):
+            headers = kwargs.pop('headers')
             self.assertNotIn('X-FOST-User', headers.keys())
             return _MockReturn(), 'ok'
-        with patch('roxy.views._http.request', no_user_header):
+        with patch('httplib2.Http.request',no_user_header):
             self.client.get('/')
-
+#
     def test_with_user(self):
         self.client.login(username = 'testuser', password = 'pass')
-        def no_user_header(url, method, body, headers):
+        def no_user_header(url, *args, *kwargs):
+            headers = kwargs.pop('headers')
             self.assertIn('X-FOST-User', headers.keys())
             return _MockReturn(), 'ok'
-        with patch('roxy.views._http.request', no_user_header):
+        with patch('httplib2.Http.request', no_user_header):
             self.client.get('/')
-
+#
