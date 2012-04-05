@@ -26,7 +26,7 @@ class UserForwarding(TestCase):
 #
     def test_with_user(self):
         self.client.login(username = 'testuser', password = 'pass')
-        def no_user_header(url, *args, *kwargs):
+        def no_user_header(url, *args, **kwargs):
             headers = kwargs.pop('headers')
             self.assertIn('X-FOST-User', headers.keys())
             return _MockReturn(), 'ok'
