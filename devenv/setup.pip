@@ -1,6 +1,7 @@
 # These are required by the runtime
 httplib2
 django
+urlobject
 
 # These are required for testing
 django-nose
