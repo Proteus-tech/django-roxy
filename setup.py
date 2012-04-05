@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name = "django-roxy",
-    version = "0.2.2",
+    version = "0.2.3",
     author = "Proteus Technologies Infrastructure team",
     author_email = "infrastructure@proteus-tech.com",
     description = ("Simple reverse proxy for Django"),
@@ -22,6 +22,6 @@ setup(
         "License :: OSI Approved :: Boost Software License - Version 1.0 - August 17th, 2003",
     ],
     packages = ['roxy', 'roxy.tests'],
-    install_requires = ['httplib2'],
+    install_requires = ['httplib2', 'urlobject'],
 )
 

@@ -3,7 +3,9 @@ views that handle reverse proxy
 """
 from django.http import HttpResponse
 from django.conf.global_settings import DEFAULT_CONTENT_TYPE
-from httplib2 import Http, urlparse
+from urlobject import URLObject
+
+from roxy import Http
 
 # django 1.4 rename _hop_headers to _hoppish. so define here, these  Hop-by-hop Headers are defined in rfc2616,
 # not to be forwarded by proxies
@@ -13,7 +15,7 @@ _hop_headers = {
     'upgrade':1
 }
 
-def proxy(origin_server, prefix=None):
+def proxy(origin_server):
     """
     Builder for the actual Django view. Use this in your urls.py.
     """
@@ -21,8 +23,8 @@ def proxy(origin_server, prefix=None):
         """
         reverse proxy Django view
         """
-        path = request.get_full_path().replace(prefix, '', 1) if prefix else request.get_full_path()
-        target_url = join_url(path, origin_server, request.is_secure())
+        request_url = URLObject(request.build_absolute_uri())
+        target_url = request_url.with_netloc(origin_server)
 
         # Construct headers
         headers = {}
@@ -57,35 +59,11 @@ def proxy(origin_server, prefix=None):
         update_messages_cookie(request, headers, httplib2_response, response)
 
         if httplib2_response.status in [301, 302]:
-            url = httplib2_response['location']
-            masked_location = masked_url(url, request.get_host(), prefix)
-            response['location'] = masked_location
+            location_url = URLObject(httplib2_response['location'])
+            response['location'] = location_url.with_netloc(request.get_host())
         return response
     return get_page
 
-def join_url(path, origin_server, is_secure=False):
-    """
-    return tartget_url of origin server
-    """
-    protocol = 'http'
-    if is_secure:
-        protocol = 'https'
-    return  ('%s://%s%s') % (protocol, origin_server, path)
-
-def masked_url(url, host, prefix):
-    """
-    Mask given url with host
-
-    http://www.google.com/search?... -> http://<host>/search?...
-    """
-    splited_url = urlparse.urlsplit(url)
-    # _replace is an only method to edit properties of namedtuple :(
-    # pylint: disable=E1103,W0212
-    # no error
-    masked_splited_url = splited_url._replace(netloc = '%s/%s' % (host, prefix) if prefix else host)
-    # pylint: enable=E1103,W0212
-    # error
-    return masked_splited_url.geturl()
 
 def update_response_header(response, headers):
     """

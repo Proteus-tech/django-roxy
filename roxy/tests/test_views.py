@@ -1,85 +1,7 @@
-from django.conf import settings
 from django.test import TestCase
 from httplib2 import Http, Response
 from mock import Mock, patch
-from roxy.views import join_url, update_response_header
-
-
-class TestViews(TestCase):
-
-    def setUp(self):
-        super(TestViews, self).setUp()
-        self.foo_origin = settings.ORIGIN_SERVER1
-        self.bar_origin = settings.ORIGIN_SERVER2
-
-    def test_join_url(self):
-        """
-        Ensure that the URL sent to requesting host is the origin server
-        """
-        path = '/services'
-        expected = "http://%s/services" % self.foo_origin
-        self.assertEqual(expected, join_url(path, self.foo_origin))
-
-    def test_join_url_with_params(self):
-        """
-        Ensure that request params are forwarded 
-        """
-        path = '/services/?status__code__exact=&venue__city__id__exact=&venue__id__exact=&q=212131&o='
-        expected = "http://%s/services/?status__code__exact=&venue__city__id__exact=&venue__id__exact=&q=212131&o=" % self.foo_origin
-        self.assertEqual(expected, join_url(path, self.foo_origin))
-
-    def test_join_secure_url(self):
-        """
-        Ensure that the secure URL sent to requesting host is the origin server
-        """
-        path = '/services'
-        is_secure = True
-        expected = "https://%s/services" % self.foo_origin
-        self.assertEqual(expected, join_url(path, self.foo_origin, is_secure))
-
-
-class TestOKStatus(TestCase):
-    def setUp(self):
-        mock_http_request(self)
-
-    def tearDown(self):
-        del Http.request
-        Http.request = self.original_http_request
-
-    def test_proxy(self):
-        """
-        Test that proxy supports anykind of URL
-        """
-        response = self.client.get('/some/freaking/url')
-        self.assertEqual(200, response.status_code)
-
-    @patch('roxy.views.join_url')
-    def test_proxy(self, mock_join_url):
-        """
-        Test that proxy can be called with any server as given in urls.py
-        #  in our urls.py
-
-        origin_one = proxy(settings.ORIGIN_SERVER1)
-        origin_two = proxy(settings.ORIGIN_SERVER2)
-        url(r'^origin_server_1/', origin_one, name='proxy1'),
-        url(r'^origin_server_2/', origin_two , name='proxy2'),
-        url(r'^', origin_two , name='proxy3'),
-
-        """
-
-
-        response = self.client.get('/origin_server_1/')
-        self.assertEqual(200, response.status_code)
-        mock_join_url.assert_called_with('/origin_server_1/', settings.ORIGIN_SERVER1, False)
-
-
-        response = self.client.get('/origin_server_2/')
-        self.assertEqual(200, response.status_code)
-        mock_join_url.assert_called_with('/origin_server_2/', settings.ORIGIN_SERVER2, False)
-
-        response = self.client.get('/')
-        self.assertEqual(200, response.status_code)
-        mock_join_url.assert_called_with('/', settings.ORIGIN_SERVER2, False)
+from roxy.views import update_response_header
 
 
 @patch('httplib2.Http.request')
@@ -181,10 +103,7 @@ class TestRedirectionStatus(TestCase):
         """
         Test that proxy supports anykind of URL
         """
-        response = self.client.get('/')
-        self.assertEqual(302, response.status_code)
-        self.assertEqual('http://testserver/login/?next=/', response['location'])
-
+        # TODO: test only mask location if location value is set to origin??
         response = self.client.get('/')
         self.assertEqual(302, response.status_code)
         self.assertEqual('http://testserver/login/?next=/', response['location'])
