@@ -1,9 +1,9 @@
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.test import TestCase
 from httplib2 import Http, Response
 from mock import Mock, patch
 from roxy.views import join_url, update_response_header
-from django.test import TestCase
+
 
 class TestViews(TestCase):
 
@@ -82,73 +82,91 @@ class TestOKStatus(TestCase):
         mock_join_url.assert_called_with('/', settings.ORIGIN_SERVER2, False)
 
 
-
-class TestPost(TestCase):
+@patch('httplib2.Http.request')
+class TestRequest(TestCase):
+    urls = 'roxy.tests.urls'
 
     def setUp(self):
-        kwargs ={'Set-Cookie':'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/',
-         'location':'http://someserver.com/login/?next=/'}
-        mock_http_request(self,**kwargs)
-    
-    def tearDown(self):
-        del Http.request
-        Http.request = self.original_http_request
+        super(TestRequest, self).setUp()
+        self.mock_response = create_mock_response()
 
-    def test_cookies_header_is_forwarded(self):
+    def test_get(self, mock_request):
         """
-        Test that if request comes with cookies, the cookies is forwared to origin server
+        Test POST request.
+
+        Request checklist:
+        1. URL. The domain should be replaced by end server domain. Path must stay the same.
+        2. Query is ?some=data
+        2. Method should be 'GET'.
+        3. Data should be empty.
+        4. All headers are forwarded (including 'Content-Type').
+
+        Response checklist:
+        1.
+        2.
+        3.
+        4.
         """
-        cookies = {'sessionid': 'a4516258966ea20a6a11aefbf2f576c4'}
-        self.client.cookies.load(cookies)
-        self.client.post('/', {'some':'data'})
-        args = Http.request.call_args[0]
-        kwargs = Http.request.call_args[1]
-        self.assertIn('Cookie', kwargs['headers'].keys())
+        self.mock_response['Set-Cookie'] = 'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/'
+        self.mock_response['Location'] = 'http://someserver.com/login/?next=/'
+        mock_request.return_value = self.mock_response, 'Mocked response content'
 
-    def test_set_cookie_header_is_not_forwarded(self):
+        response = self.client.get('/some/path', {'some': 'data'},
+            HTTP_COOKIE = 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
+            HTTP_ACCEPT = 'text/plain',
+            HTTP_CACHE_CONTROL = 'no-cache',
+        )
+
+        mock_request.assert_called_with(u'http://localhost:8009/some/path?some=data', 'GET', body=bytearray(b''),
+            headers={
+                'Accept': 'text/plain',
+                'Cache-Control': 'no-cache',
+                'Cookie': 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
+                'Content-Type': 'text/html; charset=utf-8',
+            })
+
+        self.assertEqual(response.content, 'Mocked response content')
+        self.assertEqual(response['Set-Cookie'], 'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/')
+        self.assertEqual(response['Location'], 'http://someserver.com/login/?next=/')
+
+    def test_post(self, mock_request):
         """
-        Make sure that no headers are forwarded,
-        especially 'set-cookies', if not forwarded login functionality won't work!
+        Test POST request.
+
+        Request checklist:
+        1. URL. The domain should be replaced by end server domain. Path must stay the same.
+        2. Method should be 'POST'.
+        3. Data should be in bytearray equivalence.
+        4. All headers are forwarded (including 'Content-Type').
+
+        Response checklist:
+        1.
+        2.
+        3.
+        4.
         """
-        User.objects.create_superuser('euam', 'euam@test.com', 'euampass')
-        self.client.login(username='euam', password='euampass')
-        response = self.client.post('/', {'some':'data'})
-        msg = "'Set-Cookie' should be forwarded or login may fail"
-        self.assertEqual(response.get('Set-Cookie',None),
-                         'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/',
-                         msg)
+        self.mock_response['Set-Cookie'] = 'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/'
+        self.mock_response['Location'] = 'http://someserver.com/login/?next=/'
+        mock_request.return_value = self.mock_response, 'Mocked response content'
 
-    def test_set_cookie_header_is_forwarded(self):
-        """
-        Make sure that no headers are forwarded,
-        especially 'set-cookies', if not forwarded login functionality won't work!
-        """
-        response = self.client.post('/', {'some':'data'})
-        msg = "'Set-Cookie' should be forwarded or login may fail"
-        self.assertEqual(response.get('Set-Cookie',None),
-                         'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/',
-                         msg)
-#        self.assertIsNone(response.get('Set-Cookie',None))
+        response = self.client.post('/some/path', {'some': 'data'}, content_type='application/json',
+            HTTP_COOKIE = 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
+            HTTP_ACCEPT = 'text/plain',
+            HTTP_CACHE_CONTROL = 'no-cache',
+        )
 
+        mock_request.assert_called_with(u'http://localhost:8009/some/path', 'POST', body=bytearray(b"{\'some\': \'data\'}"),
+            headers={
+                'Accept': 'text/plain',
+                'Cache-Control': 'no-cache',
+                'Cookie': 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
+                'Content-Length': 16,
+                'Content-Type': 'application/json',
+            })
 
-class TestGet(TestCase):
-    def setUp(self):
-        self.patch_http_request = patch('httplib2.Http.request')
-        self.mock_http_request = self.patch_http_request.start()
-
-    def tearDown(self):
-        self.patch_http_request.stop()
-
-    def test_content_type_and_content_disposition(self):
-        info = {}
-        info['status'] = 200
-        mock_response = Response(info)
-        mock_response['Content-Type'] = 'text/csv'
-        mock_response['Content-Disposition'] = 'attachment; filename=abc_business_units.csv'
-        self.mock_http_request.return_value = (mock_response,'')
-        response = self.client.get('/url_that_will_return_csv_file/')
-        self.assertEqual(response['Content-Type'],mock_response['Content-Type'])
-        self.assertEqual(response['Content-Disposition'],mock_response['Content-Disposition'])
+        self.assertEqual(response.content, 'Mocked response content')
+        self.assertEqual(response['Set-Cookie'], 'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8; expires=Tue, 26-Jul-2011 18:28:47 GMT; Max-Age=1209600; Path=/')
+        self.assertEqual(response['Location'], 'http://someserver.com/login/?next=/')
 
 
 class TestRedirectionStatus(TestCase):
@@ -170,7 +188,6 @@ class TestRedirectionStatus(TestCase):
         response = self.client.get('/')
         self.assertEqual(302, response.status_code)
         self.assertEqual('http://testserver/login/?next=/', response['location'])
-
 
 
 class TestUpdateResponseHeaders(TestCase):
@@ -212,7 +229,7 @@ class TestMessagesCookie(TestCase):
 
         request_cookies = '__utma=96992031.73512554.1298128014.1298718782.1298921649.6; djdt=hide; sessionid=b5a63ebae5793e6c68d1d48980c6baf0; csrftoken=803112d8898d80a5612912957ec61db8; messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\"\\05420\\054\\"2 companies have been merged\\"]]"'
         response = self.client.get('/admin/company/company/',**{'HTTP_COOKIE':request_cookies})
-        self.assertIn('messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\",20,\\"2 companies have been merged\\"]]"',self.mock_http_request.call_args[1]['headers']['Cookie'])
+        self.assertIn('messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\"\\05420\\054\\"2 companies have been merged\\"]]"',self.mock_http_request.call_args[1]['headers']['Cookie'])
 
     def test_getting_page_with_messages_cookie_as_last_cookie(self):
         def always_return_messages_last_clone_cookies(request_cookies):
@@ -235,16 +252,9 @@ class TestMessagesCookie(TestCase):
 
         request_cookies = '__utma=96992031.73512554.1298128014.1298718782.1298921649.6; djdt=hide; sessionid=b5a63ebae5793e6c68d1d48980c6baf0; csrftoken=803112d8898d80a5612912957ec61db8; messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\"\\05420\\054\\"2 companies have been merged\\"]]"'
 
-#        # mock clone_cookies to always return messages last
-#        patch_clone_cookies = patch('roxy.views.clone_cookies')
-#        mock_clone_cookies = patch_clone_cookies.start()
-#        mock_clone_cookies.side_effect = always_return_messages_last_clone_cookies
-
         response = self.client.get('/admin/company/company/',**{'HTTP_COOKIE':request_cookies})
-
-#        mock_clone_cookies.stop()
         
-        self.assertIn('messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\",20,\\"2 companies have been merged\\"]]"',self.mock_http_request.call_args[1]['headers']['Cookie'])
+        self.assertIn('messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\"\\05420\\054\\"2 companies have been merged\\"]]"',self.mock_http_request.call_args[1]['headers']['Cookie'])
 
 
 def mock_http_request(test, code=200, content_type='text/html', **kwargs):
@@ -258,3 +268,7 @@ def mock_http_request(test, code=200, content_type='text/html', **kwargs):
     test.original_http_request = Http.request
     Http.request = Mock(return_value=return_value)
     
+def create_mock_response(status_code=200, content_type='text/html'):
+    response = Response({'status': status_code})
+    response['content-type'] = content_type
+    return response
