@@ -28,12 +28,8 @@ def proxy(origin_server):
 
         # Construct headers
         headers = {}
-        if request.META.has_key('CONTENT_TYPE'):
-            headers['Content-Type'] = request.META['CONTENT_TYPE']
-        if request.META.has_key('CONTENT_LENGTH'):
-            headers['Content-Length'] = request.META['CONTENT_LENGTH']
         for header, value in request.META.items():
-            if header.startswith('HTTP_'):
+            if header.startswith('HTTP_') or header in ['CONTENT_TYPE', 'CONTENT_LENGTH']:
                 name = header.replace('HTTP_', '').replace('_', '-').title()
                 headers[name] = value
 
