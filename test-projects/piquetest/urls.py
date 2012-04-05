@@ -17,7 +17,9 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
 
-    url(r'^categories/?$', proxy('localhost:8001')),
-    url(r'^static', proxy('localhost:8001')),
-    url(r'^media', proxy('localhost:8001')),
+#    url(r'^categories/?$', proxy('localhost:8001')),
+#    url(r'^static', proxy('localhost:8001')),
+#    url(r'^media', proxy('localhost:8001')),
+#    url(r'', proxy('blake:8000')),
+    url(r'', proxy('localhost:8001')),
 )

@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from httplib2 import Http, Response
 from mock import Mock, patch
-from roxy.views import join_url, clone_cookies, update_response_header
+from roxy.views import join_url, update_response_header
 from django.test import TestCase
 
 class TestViews(TestCase):
@@ -36,20 +36,6 @@ class TestViews(TestCase):
         is_secure = True
         expected = "https://%s/services" % self.foo_origin
         self.assertEqual(expected, join_url(path, self.foo_origin, is_secure))
-
-    def test_clone_cookies__one_element(self):
-        cookies = {'sessionid': '2af7395fba66995ad1376bf0e401b9a0'}
-        self.assertEqual('sessionid=2af7395fba66995ad1376bf0e401b9a0', clone_cookies(cookies))
-
-
-    def test_clone_cookies__many_elements(self):
-        cookies = {'sessionid': 'a4516258966ea20a6a11aefbf2f576c4',
-                   'expires': 'Tue, 26-Jul-2011 15:33:39 GMT',
-                   'Max-Age': '1209600',
-                   'Path': '/'
-                  }
-        expected = 'Path=/;sessionid=a4516258966ea20a6a11aefbf2f576c4;expires=Tue, 26-Jul-2011 15:33:39 GMT;Max-Age=1209600'
-        self.assertEqual(expected, clone_cookies(cookies))
 
 
 class TestOKStatus(TestCase):
@@ -249,14 +235,14 @@ class TestMessagesCookie(TestCase):
 
         request_cookies = '__utma=96992031.73512554.1298128014.1298718782.1298921649.6; djdt=hide; sessionid=b5a63ebae5793e6c68d1d48980c6baf0; csrftoken=803112d8898d80a5612912957ec61db8; messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\"\\05420\\054\\"2 companies have been merged\\"]]"'
 
-        # mock clone_cookies to always return messages last
-        patch_clone_cookies = patch('roxy.views.clone_cookies')
-        mock_clone_cookies = patch_clone_cookies.start()
-        mock_clone_cookies.side_effect = always_return_messages_last_clone_cookies
+#        # mock clone_cookies to always return messages last
+#        patch_clone_cookies = patch('roxy.views.clone_cookies')
+#        mock_clone_cookies = patch_clone_cookies.start()
+#        mock_clone_cookies.side_effect = always_return_messages_last_clone_cookies
 
         response = self.client.get('/admin/company/company/',**{'HTTP_COOKIE':request_cookies})
 
-        mock_clone_cookies.stop()
+#        mock_clone_cookies.stop()
         
         self.assertIn('messages="e0821c371745ee46ec2cd2e317e451acfb02ef4a$[[\\"__json_message\\",20,\\"2 companies have been merged\\"]]"',self.mock_http_request.call_args[1]['headers']['Cookie'])
 
