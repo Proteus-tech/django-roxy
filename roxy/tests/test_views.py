@@ -1,7 +1,6 @@
 from django.test import TestCase
 from httplib2 import Http, Response
 from mock import Mock, patch
-from roxy.views import update_response_header
 
 
 @patch('httplib2.Http.request')
@@ -109,27 +108,62 @@ class TestRedirectionStatus(TestCase):
         self.assertEqual('http://testserver/login/?next=/', response['location'])
 
 
-class TestUpdateResponseHeaders(TestCase):
-    def test_should_exclude_hop_by_hop_headers(self):
-        """
-        keys in _hop_headers (ie. connection, keep-alive) should be excluded from headers to avoid
-        hop-by-hop assertion error
-        """
-        stub_response = {}
-        headers = {'set-cookie':'sessionid=123','connection':1, 'keep-alive':1}
-        update_response_header(stub_response, headers)
-        self.assertNotIn('connection', stub_response)
-        self.assertNotIn('keep-alive', stub_response)
+@patch('httplib2.Http.request')
+class TestHopHeaders(TestCase):
+    urls = 'roxy.tests.urls'
 
-    def test_update_response_headers(self):
+    def setUp(self):
+        super(TestHopHeaders, self).setUp()
+        self.mock_response = create_mock_response()
+
+    def test_hop_headers(self, mock_request):
         """
-        keys should be included in response's headers
+        Test hop-by-hop headers (e.g. Connection, Keep-Alive) should be ignored by roxy both request and response
         """
-        stub_response = {}
-        headers = {'set-cookie':'sessionid=123','content-type':'text/html'}
-        update_response_header(stub_response, headers)
-        self.assertIn('set-cookie', stub_response)
-        self.assertIn('content-type', stub_response)
+        self.mock_response['Connection'] = 'Fake connection'
+        self.mock_response['Keep-Alive'] = 'Fake keep-alive'
+        self.mock_response['Proxy-Authenticate'] = 'Fake proxy-authenticate'
+        self.mock_response['Proxy-Authorization'] = 'Fake proxy-authorization'
+        self.mock_response['TE'] = 'Fake te'
+        self.mock_response['Trailers'] = 'Fake trailers'
+        self.mock_response['Transfer-Encoding'] = 'Fake transfer-encoding'
+        self.mock_response['Upgrade'] = 'Fake upgrade'
+        self.mock_response['Set-Cookie'] = 'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8;'
+        mock_request.return_value = self.mock_response, 'Mocked response content'
+
+        response = self.client.get('/some/path', {'some': 'data'},
+            HTTP_COOKIE = 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
+            HTTP_ACCEPT = 'text/plain',
+            HTTP_CACHE_CONTROL = 'no-cache',
+            HTTP_CONNECTION = 'Fake connection',
+            HTTP_KEEP_ALIVE = 'Fake keep-alive',
+            HTTP_PROXY_AUTHENTICATE = 'Fake proxy-authenticate',
+            HTTP_PROXY_AUTHORIZATION = 'Fake proxy-authorization',
+            HTTP_TE = 'Fake te',
+            HTTP_TRAILERS = 'Fake trailers',
+            HTTP_TRANSFER_ENCODING = 'Fake transfer-encoding',
+            HTTP_UPGRADE = 'Fake upgrade',
+        )
+
+        mock_request.assert_called_with(u'http://localhost:8009/some/path?some=data', 'GET', body=bytearray(b''),
+            headers={
+                'Accept': 'text/plain',
+                'Cache-Control': 'no-cache',
+                'Cookie': 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
+                'Content-Type': 'text/html; charset=utf-8',
+            })
+
+        self.assertEqual(response.content, 'Mocked response content')
+        self.assertEqual(response['Set-Cookie'], 'sessionid=ab3ffd358676a5ef2fbcebad3809c9d8;')
+        self.assertFalse(response.has_header('Connection'))
+        self.assertFalse(response.has_header('Keep-Alive'))
+        self.assertFalse(response.has_header('Proxy-Authenticate'))
+        self.assertFalse(response.has_header('Proxy-Authorization'))
+        self.assertFalse(response.has_header('TE'))
+        self.assertFalse(response.has_header('Trailers'))
+        self.assertFalse(response.has_header('Transfer-Encoding'))
+        self.assertFalse(response.has_header('Upgrade'))
+
 
 class TestMessagesCookie(TestCase):
     def setUp(self):

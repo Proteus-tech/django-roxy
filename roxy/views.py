@@ -19,7 +19,7 @@ def proxy(origin_server):
     """
     Builder for the actual Django view. Use this in your urls.py.
     """
-    def get_page(request, *args, **kwargs):
+    def get_page(request):
         """
         reverse proxy Django view
         """
@@ -31,7 +31,8 @@ def proxy(origin_server):
         for header, value in request.META.items():
             if header.startswith('HTTP_') or header in ['CONTENT_TYPE', 'CONTENT_LENGTH']:
                 name = header.replace('HTTP_', '').replace('_', '-').title()
-                headers[name] = value
+                if name.lower() not in _hop_headers:
+                    headers[name] = value
 
         ########################################################################
         # TODO: Move this to somewhere else, e.g. middleware
@@ -70,7 +71,7 @@ def update_response_header(response, headers):
     """
     ignored_keys = ['status', 'content-location'] + _hop_headers.keys()
     for key, value in headers.items():
-        if key not in ignored_keys:
+        if key.lower() not in ignored_keys:
             response[key] = value
 
 def update_messages_cookie(request, headers, httplib2_response, response):
