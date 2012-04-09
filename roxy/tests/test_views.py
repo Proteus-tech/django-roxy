@@ -1,11 +1,20 @@
+from django.conf.urls import patterns, url
 from django.test import TestCase
 from httplib2 import Http, Response
 from mock import Mock, patch
 
+from roxy.views import proxy
+
+
+# Urls for tests
+urlpatterns = patterns('',
+    url(r'', proxy('localhost:8009')),
+)
+
 
 @patch('httplib2.Http.request')
 class TestRequest(TestCase):
-    urls = 'roxy.tests.urls'
+    urls = 'roxy.tests.test_views'
 
     def setUp(self):
         super(TestRequest, self).setUp()
@@ -110,7 +119,7 @@ class TestRedirectionStatus(TestCase):
 
 @patch('httplib2.Http.request')
 class TestHopHeaders(TestCase):
-    urls = 'roxy.tests.urls'
+    urls = 'roxy.tests.test_views'
 
     def setUp(self):
         super(TestHopHeaders, self).setUp()

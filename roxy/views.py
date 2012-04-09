@@ -34,12 +34,6 @@ def proxy(origin_server):
                 if name.lower() not in _hop_headers:
                     headers[name] = value
 
-        ########################################################################
-        # TODO: Move this to somewhere else, e.g. middleware
-        if request.user.is_authenticated():
-            headers['X-FOST-User'] = request.user.username
-        ########################################################################
-
         # Send request
         http = Http()
         http.follow_redirects = False
