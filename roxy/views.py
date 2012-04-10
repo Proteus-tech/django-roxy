@@ -31,6 +31,17 @@ def proxy(origin_server):
         for header, value in request.META.items():
             if header.startswith('HTTP_') or header in ['CONTENT_TYPE', 'CONTENT_LENGTH']:
                 name = header.replace('HTTP_', '').replace('_', '-').title()
+
+                # Not forward empty content-length (esp in get), this causes weird response
+                if name.lower() == 'content-length' and value == '':
+                    continue
+
+                # An HTTP/1.1 proxy MUST ensure that any request message it forwards does contain an appropriate
+                # Host header field that identifies the service being requested by the proxy.
+                if name.lower() == 'host':
+                    value = origin_server
+
+                # Assigning headers' values
                 if name.lower() not in _hop_headers.keys():
                     headers[name] = value
 

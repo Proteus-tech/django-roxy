@@ -22,7 +22,7 @@ class TestRequest(TestCase):
 
     def test_get(self, mock_request):
         """
-        Test POST request.
+        Test GET request.
 
         Request checklist:
         1. URL. The domain should be replaced by end server domain. Path must stay the same.
@@ -45,6 +45,8 @@ class TestRequest(TestCase):
             HTTP_COOKIE = 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
             HTTP_ACCEPT = 'text/plain',
             HTTP_CACHE_CONTROL = 'no-cache',
+            HTTP_HOST = 'testserver',
+            CONTENT_LENGTH = '',
         )
 
         mock_request.assert_called_with(u'http://localhost:8009/some/path?some=data', 'GET', body=bytearray(b''),
@@ -53,6 +55,7 @@ class TestRequest(TestCase):
                 'Cache-Control': 'no-cache',
                 'Cookie': 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
                 'Content-Type': 'text/html; charset=utf-8',
+                'Host': 'localhost:8009',
             })
 
         self.assertEqual(response.content, 'Mocked response content')
@@ -83,6 +86,7 @@ class TestRequest(TestCase):
             HTTP_COOKIE = 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
             HTTP_ACCEPT = 'text/plain',
             HTTP_CACHE_CONTROL = 'no-cache',
+            HTTP_HOST = 'testserver'
         )
 
         mock_request.assert_called_with(u'http://localhost:8009/some/path', 'POST', body=bytearray(b"{\'some\': \'data\'}"),
@@ -92,6 +96,7 @@ class TestRequest(TestCase):
                 'Cookie': 'sessionid=a4516258966ea20a6a11aefbf2f576c4',
                 'Content-Length': 16,
                 'Content-Type': 'application/json',
+                'Host': 'localhost:8009',
             })
 
         self.assertEqual(response.content, 'Mocked response content')
