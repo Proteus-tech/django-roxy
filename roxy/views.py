@@ -31,7 +31,7 @@ def proxy(origin_server):
         for header, value in request.META.items():
             if header.startswith('HTTP_') or header in ['CONTENT_TYPE', 'CONTENT_LENGTH']:
                 name = header.replace('HTTP_', '').replace('_', '-').title()
-                if name.lower() not in _hop_headers:
+                if name.lower() not in _hop_headers.keys():
                     headers[name] = value
 
         # Send request
@@ -46,7 +46,7 @@ def proxy(origin_server):
         content_type = httplib2_response.get('content-type', DEFAULT_CONTENT_TYPE)
         response = HttpResponse(content, status=httplib2_response.status, content_type=content_type)
 
-        update_response_header(response, httplib2_response)
+        update_response_headers(response, httplib2_response)
         update_messages_cookie(request, headers, httplib2_response, response)
 
         if httplib2_response.status in [301, 302]:
@@ -56,7 +56,7 @@ def proxy(origin_server):
     return get_page
 
 
-def update_response_header(response, headers):
+def update_response_headers(response, headers):
     """
     update response header with given headers
 
