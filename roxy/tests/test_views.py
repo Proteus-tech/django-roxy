@@ -8,7 +8,7 @@ from roxy.views import proxy
 
 # Urls for tests
 urlpatterns = patterns('',
-    url(r'', proxy('localhost:8009')),
+    url(r'', proxy('https://localhost:8009')),
 )
 
 
@@ -49,7 +49,7 @@ class TestRequest(TestCase):
             CONTENT_LENGTH = '',
         )
 
-        mock_request.assert_called_with(u'http://localhost:8009/some/path?some=data', 'GET', body=bytearray(b''),
+        mock_request.assert_called_with(u'https://localhost:8009/some/path?some=data', 'GET', body=bytearray(b''),
             headers={
                 'Accept': 'text/plain',
                 'Cache-Control': 'no-cache',
@@ -89,7 +89,7 @@ class TestRequest(TestCase):
             HTTP_HOST = 'testserver'
         )
 
-        mock_request.assert_called_with(u'http://localhost:8009/some/path', 'POST', body=bytearray(b"{\'some\': \'data\'}"),
+        mock_request.assert_called_with(u'https://localhost:8009/some/path', 'POST', body=bytearray(b"{\'some\': \'data\'}"),
             headers={
                 'Accept': 'text/plain',
                 'Cache-Control': 'no-cache',
@@ -105,8 +105,10 @@ class TestRequest(TestCase):
 
 
 class TestRedirectionStatus(TestCase):
+    urls = 'roxy.tests.test_views'
+
     def setUp(self):
-        mock_http_request(self, 302, location='http://someserver.com/login/?next=/')
+        mock_http_request(self, 302, location='https://someserver.com/login/?next=/')
 
     def tearDown(self):
         del Http.request
@@ -159,7 +161,7 @@ class TestHopHeaders(TestCase):
             HTTP_UPGRADE = 'Fake upgrade',
         )
 
-        mock_request.assert_called_with(u'http://localhost:8009/some/path?some=data', 'GET', body=bytearray(b''),
+        mock_request.assert_called_with(u'https://localhost:8009/some/path?some=data', 'GET', body=bytearray(b''),
             headers={
                 'Accept': 'text/plain',
                 'Cache-Control': 'no-cache',
