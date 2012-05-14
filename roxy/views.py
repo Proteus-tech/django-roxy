@@ -1,6 +1,7 @@
 """
 views that handle reverse proxy
 """
+from django.conf import settings
 from django.http import HttpResponse
 from django.conf.global_settings import DEFAULT_CONTENT_TYPE
 from urlobject import URLObject
@@ -14,6 +15,8 @@ _hop_headers = {
     'proxy-authorization':1, 'te':1, 'trailers':1, 'transfer-encoding':1,
     'upgrade':1
 }
+
+_httplib2_constructor_kwargs = getattr(settings, 'ROXY_HTTPLIB2_CONSTRUCTOR_KWARGS', {})
 
 def proxy(origin_server):
     """
@@ -54,7 +57,7 @@ def proxy(origin_server):
                     headers[name] = value
 
         # Send request
-        http = Http()
+        http = Http(**_httplib2_constructor_kwargs)
         http.follow_redirects = False
         httplib2_response, content = http.request(
             target_url, request.method,
