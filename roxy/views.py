@@ -1,6 +1,7 @@
 """
 views that handle reverse proxy
 """
+from django.conf import settings
 from django.http import HttpResponse
 from django.conf.global_settings import DEFAULT_CONTENT_TYPE
 from urlobject import URLObject
@@ -15,6 +16,8 @@ _hop_headers = {
     'upgrade':1
 }
 
+_httplib2_constructor_kwargs = getattr(settings, 'ROXY_HTTPLIB2_CONSTRUCTOR_KWARGS', {})
+
 def proxy(origin_server):
     """
     Builder for the actual Django view. Use this in your urls.py.
@@ -24,7 +27,12 @@ def proxy(origin_server):
         reverse proxy Django view
         """
         request_url = URLObject(request.build_absolute_uri())
-        target_url = request_url.with_netloc(origin_server)
+        origin_url = URLObject(origin_server)
+        # if origin server is not a url then assume it's netloc? to make it compat with previous version
+        if origin_url.scheme == '':
+            target_url = request_url.with_netloc(origin_server)
+        else:
+            target_url = (origin_url.with_path(request_url.path)).with_query(request_url.query)
 
         # Construct headers
         headers = {}
@@ -39,14 +47,17 @@ def proxy(origin_server):
                 # An HTTP/1.1 proxy MUST ensure that any request message it forwards does contain an appropriate
                 # Host header field that identifies the service being requested by the proxy.
                 if name.lower() == 'host':
-                    value = origin_server
+                    if origin_url.scheme == '':
+                        value = origin_server
+                    else:
+                        value = str(URLObject(origin_server).netloc)
 
                 # Assigning headers' values
                 if name.lower() not in _hop_headers.keys():
                     headers[name] = value
 
         # Send request
-        http = Http()
+        http = Http(**_httplib2_constructor_kwargs)
         http.follow_redirects = False
         httplib2_response, content = http.request(
             target_url, request.method,
@@ -62,7 +73,10 @@ def proxy(origin_server):
 
         if httplib2_response.status in [301, 302]:
             location_url = URLObject(httplib2_response['location'])
-            response['location'] = location_url.with_netloc(request.get_host())
+            if origin_url.scheme == '':
+                response['location'] = location_url.with_netloc(request.get_host())
+            else:
+                response['location'] = (request_url.with_path(location_url.path)).with_query(location_url.query)
         return response
     return get_page
 
