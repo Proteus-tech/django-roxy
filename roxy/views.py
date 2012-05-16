@@ -29,10 +29,9 @@ def proxy(origin_server):
         request_url = URLObject(request.build_absolute_uri())
         origin_url = URLObject(origin_server)
         # if origin server is not a url then assume it's netloc? to make it compat with previous version
-        if origin_url.scheme == '':
-            target_url = request_url.with_netloc(origin_server)
-        else:
-            target_url = (origin_url.with_path(request_url.path)).with_query(request_url.query)
+        target_url = request_url.with_netloc(origin_server)
+        if origin_url.scheme:
+            target_url = request_url.with_netloc(origin_url.netloc).with_scheme(origin_url.scheme)
 
         # Construct headers
         headers = {}
@@ -76,7 +75,7 @@ def proxy(origin_server):
             if origin_url.scheme == '':
                 response['location'] = location_url.with_netloc(request.get_host())
             else:
-                response['location'] = (request_url.with_path(location_url.path)).with_query(location_url.query)
+                response['location'] = location_url.with_netloc(request_url.netloc).with_scheme(request_url.scheme)
         return response
     return get_page
 

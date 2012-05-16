@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name = "django-roxy",
-    version = "0.2.5",
+    version = "0.2.6",
     author = "Proteus Technologies Development team",
     author_email = "infrastructure@proteus-tech.com",
     description = ("Simple reverse proxy for Django"),

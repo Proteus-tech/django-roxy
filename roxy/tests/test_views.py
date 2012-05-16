@@ -108,7 +108,7 @@ class TestRedirectionStatus(TestCase):
     urls = 'roxy.tests.test_views'
 
     def setUp(self):
-        mock_http_request(self, 302, location='https://someserver.com/login/?next=/')
+        mock_http_request(self, 302, location='https://someserver.com/login/?next=/#hello')
 
     def tearDown(self):
         del Http.request
@@ -121,7 +121,7 @@ class TestRedirectionStatus(TestCase):
         # TODO: test only mask location if location value is set to origin??
         response = self.client.get('/')
         self.assertEqual(302, response.status_code)
-        self.assertEqual('http://testserver/login/?next=/', response['location'])
+        self.assertEqual('http://testserver/login/?next=/#hello', response['location'])
 
 
 @patch('httplib2.Http.request')
