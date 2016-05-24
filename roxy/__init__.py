@@ -13,7 +13,10 @@ def _load_post_and_files(self):
     """
     # This statement have a side-effect that loads raw post data to _raw_post_data
     # pylint: disable=W0104
-    self.raw_post_data
+    if hasattr(self, 'body'):
+        self.body
+    else:
+        self.raw_post_data
     return self._orig_load_post_and_files()    # pylint: disable=W0212
 HttpRequest._load_post_and_files = _load_post_and_files
 

@@ -58,9 +58,13 @@ def proxy(origin_server):
         # Send request
         http = Http(**_httplib2_constructor_kwargs)
         http.follow_redirects = False
+        if hasattr(request, 'body'):
+            request_body = request.body
+        else:
+            request_body = request.raw_post_data
         httplib2_response, content = http.request(
             target_url, request.method,
-            body=bytearray(request.raw_post_data),
+            body=bytearray(request_body),
             headers=headers)
 
         # Construct Django HttpResponse
